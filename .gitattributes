@@ -1,2 +1,20 @@
-# Auto detect text files and perform LF normalization
+# Handle line endings automatically for files detected as text
+# and leave binary files untouched.
 * text=auto
+
+#
+# The above will handle all files NOT found below
+#
+
+# Explicitly declare text files you want to always have LF line endings on checkout.
+*.java text eol=lf
+*.xml text eol=lf
+*.properties text eol=lf
+*.sh text eol=lf
+mvnw text eol=lf
+
+# Git specific config files
+.git* text eol=lf
+
+# Declare files that will always have CRLF line endings on checkout.
+*.cmd text eol=crlf
