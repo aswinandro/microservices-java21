@@ -39,12 +39,18 @@ public class Routes {
     public RouterFunction<ServerResponse> inventoryServiceRoute(){
         return route("inventory_service")
                 .route(RequestPredicates.path("/api/inventory"), HandlerFunctions.http("http://localhost:8082"))
+                .filter(CircuitBreakerFilterFunctions.circuitBreaker("inventoryServiceCircuitBreaker",
+                        URI.create("forward:/fallbackRoute")
+                ))
                 .build();
     }
     @Bean
     public RouterFunction<ServerResponse> productServiceSwaggerRoute(){
         return route("product_service_swagger")
                 .route(RequestPredicates.path("/product-service/v3/api-docs"), HandlerFunctions.http("http://localhost:8080"))
+                .filter(CircuitBreakerFilterFunctions.circuitBreaker("productServiceSwaggerCircuitBreaker",
+                        URI.create("forward:/fallbackRoute")
+                ))
                 .filter(setPath("/api-docs"))
                 .build();
     }
@@ -52,6 +58,9 @@ public class Routes {
     public RouterFunction<ServerResponse> orderServiceSwaggerRoute(){
         return route("order_service_swagger")
                 .route(RequestPredicates.path("/order-service/v3/api-docs"), HandlerFunctions.http("http://localhost:8081"))
+                .filter(CircuitBreakerFilterFunctions.circuitBreaker("orderServiceSwaggerCircuitBreaker",
+                        URI.create("forward:/fallbackRoute")
+                ))
                 .filter(setPath("/api-docs"))
                 .build();
     }
@@ -60,6 +69,9 @@ public class Routes {
     public RouterFunction<ServerResponse> inventoryServiceSwaggerRoute(){
         return route("inventory_service_swagger")
                 .route(RequestPredicates.path("/inventory-service/v3/api-docs"), HandlerFunctions.http("http://localhost:8082"))
+                .filter(CircuitBreakerFilterFunctions.circuitBreaker("inventoryServiceSwaggerCircuitBreaker",
+                        URI.create("forward:/fallbackRoute")
+                ))
                 .filter(setPath("/api-docs"))
                 .build();
     }
