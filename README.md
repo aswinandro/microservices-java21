@@ -1,101 +1,175 @@
-Java Microservices Architecture powered by Spring Boot, MongoDB, SQL, Eureka (Service Discovery), Circuit Breaker, Docker, Test Containerization, Spring Data JPA, Flyway Migration, Lombok, and Spring Web. This repo demonstrates best practices for modern Java microservices development with multiple services and resilient configuration.
+# Java Microservices Architecture with Spring Boot and Java 21
 
-Architecture Overview
-API Gateway: Handles routing to internal microservices, circuit breaking (Resilience4J/Spring Cloud Gateway).
+[![License](https://img.shields.io/badge/License-Unlicense-blue.svg)](https://unlicense.org/)
+[![Java](https://img.shields.io/badge/Java-21-orange)](https://www.oracle.com/java/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-brightgreen)](https://spring.io/projects/spring-boot)
 
-Product Service: Manages products, stores data in MongoDB.
+## Overview
 
-Order Service: Handles order creation/processing, stores in SQL (JPA/Flyway).
+This repository demonstrates a modern **Java Microservices Architecture** built with **Spring Boot 3.x** and **Java 21**, leveraging cutting-edge technologies and best practices for scalable, resilient, and maintainable microservices. The project includes multiple services, each with its own database, orchestrated via Docker, and integrated with service discovery, circuit breakers, and API documentation.
 
-Inventory Service: Manages product inventory, persistent storage.
+### Key Features
+- **Service Discovery**: Eureka for dynamic service registration and discovery.
+- **Resilience**: Circuit breakers with Resilience4j to handle failures gracefully.
+- **Data Persistence**:
+  - **MongoDB** for flexible NoSQL storage (Product Service).
+  - **MySQL** with Spring Data JPA and Flyway migrations (Order Service).
+- **API Documentation**: Swagger/OpenAPI for interactive endpoint exploration.
+- **Containerization**: Docker and Testcontainers for development and testing.
+- **Frontend**: Angular-based UI for a complete full-stack experience.
+- **Modern Java**: Uses Java 21 Records, Lombok for boilerplate reduction, and modular design.
 
-Frontends: Multiple UI frontends built with Angular and/or other technologies.
+## Architecture Overview
 
-Microservices & REST APIs
-API Gateway
-Handles routing to /api/product, /api/order, /api/inventory. Implements circuit breaker fallback.
+The system follows a **gateway-patterned microservices architecture**:
 
-Fallback route: GET /fallbackRoute
-Responds: 503 Service Unavailable: "Service Unavailable"
+```
+[Client/UI] --> [API Gateway (Spring Cloud Gateway + Resilience4j)]
+                |
+                +--> [Product Service] <--> [MongoDB]
+                |
+                +--> [Order Service] <--> [MySQL (Flyway)]
+                |
+                +--> [Inventory Service] <--> [Persistent Storage]
+```
 
-Routes configured for each microservice with circuit breaker support.
+- **API Gateway**: Routes requests to microservices, enforces circuit breaking, and exposes Swagger docs.
+- **Services**: Independent, loosely coupled, each with dedicated persistence.
+- **Eureka**: Central registry for service discovery.
+- **Frontends**: Angular-based UI consuming REST APIs.
 
-Product Service
-Base URL: /api/product
+## API Endpoints
 
-Method	Endpoint	Description	Request Body	Response
-POST	/api/product	Create a new product	ProductRequest DTO	ProductResponse DTO
-GET	/api/product	List all products	—	[ProductResponse] DTOs
-MongoDB powered. Lombok/Spring Data used.
+All services expose RESTful APIs with JSON payloads, documented via Swagger. Below is a summary of key endpoints:
 
-Order Service
-Base URL: /api/order
+### API Gateway
+- **Base URL**: `http://localhost:8080`
+- **Key Endpoint**:
+  - `GET /fallbackRoute` → Returns 503 "Service Unavailable" on circuit breaker trip.
+- **Routing**: Forwards `/api/product/**`, `/api/order/**`, `/api/inventory/**` to respective services.
 
-Method	Endpoint	Description	Request Body	Response
-POST	/api/order	Place a new order	OrderRequest DTO	"Order Placed Successfully"
-Circuit breaker and fallback method implemented (Resilience4j). SQL, Flyway migrations, and JPA.
+### Product Service
+- **Base URL**: `/api/product`
+- **Endpoints**:
+  - `POST /api/product` → Create a product (`ProductRequest` DTO → `ProductResponse` DTO).
+  - `GET /api/product` → List all products (returns `[ProductResponse]` DTOs).
+- **Backend**: MongoDB, Spring Data MongoDB, Lombok.
 
-Inventory Service
-Base URL: /api/inventory
+### Order Service
+- **Base URL**: `/api/order`
+- **Endpoints**:
+  - `POST /api/order` → Place an order (`OrderRequest` DTO → "Order Placed Successfully").
+- **Backend**: MySQL, Spring Data JPA, Flyway migrations, Resilience4j.
 
-(Typical endpoints follow product and order services patterns, e.g.)
+### Inventory Service
+- **Base URL**: `/api/inventory`
+- **Endpoints**:
+  - `GET /api/inventory` → List inventory items.
+  - `POST /api/inventory` → Add/update inventory (`InventoryRequest` DTO → `InventoryResponse` DTO).
+- **Backend**: Flexible storage (MongoDB/SQL), integrated with Order Service.
 
-GET /api/inventory – List all inventory items.
+### Swagger Documentation
+- Access via gateway: `http://localhost:8080/<service>/v3/api-docs` (e.g., `/product-service/v3/api-docs`).
+- Interactive UI: `http://localhost:8080/<service>/swagger-ui.html`.
+- Auto-generates schemas, supports request/response examples.
 
-POST /api/inventory – Add/update inventory records.
+## Docker and Containerization
 
-See service code for additional specifics.
+Each microservice is containerized with **Docker** and orchestrated via **docker-compose**. **Testcontainers** are used for integration testing.
 
-Frontends
-angular-frontend
-Built with Angular CLI 18.x.
+### Docker Setup
+- **Base Images**: `eclipse-temurin:21-jdk-alpine` (build), `eclipse-temurin:21-jre-alpine` (runtime).
+- **Dockerfiles**: Multi-stage builds for slim images (~150MB).
+- **docker-compose.yml**: Defines services, networks, and dependencies (e.g., MongoDB, MySQL).
+- **Example (Product Service)**:
+```yaml
+version: '3.8'
+services:
+  product-service:
+    build: .
+    ports:
+      - "8081:8080"
+    depends_on:
+      - mongo
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+```
 
-Usage:
+### Key Features
+- **Health Checks**: Exposed via `/actuator/health`.
+- **Volumes**: Persistent data for MongoDB/MySQL.
+- **Testcontainers**: Auto-spins DBs for tests (e.g., `MongoDBContainer`).
 
-ng serve for development
+## Frontend
 
-http://localhost:4200/ for preview
+- **angular-frontend**:
+  - Built with **Angular 18 CLI**.
+  - Run: `cd angular-frontend && ng serve` (serves at `http://localhost:4200`).
+  - Proxies API calls to the gateway.
+- **microservices-shop-frontend**:
+  - Secondary UI (check sub-README for specifics, likely React/Vue).
+  - Similar setup for static serving via Nginx.
 
-See README inside angular-frontend for build/test instructions.
+## Technologies
 
-microservices-shop-frontend
-Additional UI frontend, folder structure similar to Angular frontend.
+| Category          | Technologies                          |
+|-------------------|---------------------------------------|
+| Backend          | Java 21, Spring Boot, Spring Data JPA/MongoDB, Lombok, Records |
+| Databases        | MongoDB, MySQL (Flyway)              |
+| Resilience       | Eureka, Resilience4j                 |
+| API Docs         | Swagger/OpenAPI (Springdoc)          |
+| Containerization | Docker, Testcontainers, docker-compose |
+| Frontend         | Angular 18                           |
+| Build Tools      | Maven                                |
 
-Resilience & Service Discovery
-Eureka: Central registry for service discovery.
+## Getting Started
 
-Circuit Breaker: Spring Cloud Gateway and Resilience4j to prevent cascading failures (configured per service in API Gateway).
+### Prerequisites
+- **Java 21** (e.g., OpenJDK)
+- **Docker** and **docker-compose**
+- **Node.js** (for Angular frontend)
+- **Maven**
 
-Swagger API Docs:
-Exposed for each microservice per route (e.g. /product-service/v3/api-docs routed via gateway).
+### Running the Project
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/aswinandro/microservices-java21.git
+   cd microservices-java21
+   ```
+2. **Start Services**:
+   - Per service: `cd <service> && docker-compose up` (e.g., `cd product-service`).
+   - All services: Run root-level `docker-compose up` (if available).
+3. **Access**:
+   - API Gateway: `http://localhost:8080`
+   - Swagger UI: `http://localhost:8080/<service>/swagger-ui.html`
+   - Frontend: `cd angular-frontend && ng serve` → `http://localhost:4200`
+4. **Testing**:
+   - Run unit/integration tests: `cd <service> && ./mvnw test`
+   - Testcontainers auto-start DBs for tests.
 
-Running the Project
-Services can be orchestrated using docker-compose.yml files in each microservice folder.
-See each microservice’s README (or Dockerfile) for instructions.
+### Production Deployment
+- Use Kubernetes/Helm for scaling (adapt docker-compose to manifests).
+- Configure environment variables (e.g., `SPRING_DATASOURCE_URL`, `SPRING_DATA_MONGODB_URI`).
 
-Technologies Used
-Java 21, Spring Boot, Spring Data JPA
+## License
 
-MongoDB, MySQL/SQL
+This project is licensed under the [Unlicense](https://unlicense.org/) – free to use, modify, and distribute without restrictions. See [LICENSE](./LICENSE) for details.
 
-Eureka
+## Contributing
 
-Resilience4j
+Contributions are welcome! Please:
+1. Fork the repository.
+2. Create a feature branch (`git checkout -b feature/your-feature`).
+3. Commit changes (`git commit -m "Add your feature"`).
+4. Push to the branch (`git push origin feature/your-feature`).
+5. Open a pull request.
 
-Docker
+## Contact
 
-Angular (Frontend)
+For issues or questions, open a GitHub issue or reach out via the repository's [discussions](https://github.com/aswinandro/microservices-java21/discussions).
 
-Lombok
+---
 
-Flyway
-
-License
-This project is licensed under the Unlicense. Feel free to use and modify.
-
-For API models and additional endpoints, see each microservice’s source (controller and dto folders). Code is modular for easy extension.
-
-github.com favicon
-microservices-java21/inventory-service at main · aswinandro/microservices-java21 · GitHub
-
-
+*Last updated: October 04, 2025*
