@@ -1,5 +1,11 @@
 # Compiled class file
 *.class
+*.sdi
+*.ibt
+
+# MySQL/InnoDB
+ib_logfile*
+ibdata*
 
 # Log file
 *.log
@@ -52,3 +58,9 @@ buildNumber.properties
 ### Docker ###
 # Ignore any local database data directories
 **/mysql/
+
+# Ignore local volume data for services
+**/volume-data/
+
+# Ignore local MongoDB data for product-service
+**/product-service/data/
