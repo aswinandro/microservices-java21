@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
+import static com.andro.microservices.order_service.client.InventoryClient.log;
+
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -30,7 +32,9 @@ public class OrderService {
 
 //            Send Message to Kafka Topic - order Number and mail
             OrderPlacedEvent orderPlacedEvent = new OrderPlacedEvent(order.getOrderNumber(),orderRequest.userDetails().email());
+            log.info("Start - Sending Order Placed Event {} to kafka topic order-placed", orderPlacedEvent);
             kafkaTemplate.send("order-paced", orderPlacedEvent);
+            log.info("End - Sending Order Placed Event {} to kafka topic order-placed", orderPlacedEvent);
         }
         else{
             throw new RuntimeException("Product" + orderRequest.skuCode() + "is not in stock, please try again later");
